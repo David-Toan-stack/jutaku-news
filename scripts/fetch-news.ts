@@ -69,14 +69,15 @@ async function processItem(item: FeedItem): Promise<'published' | 'draft' | 'ski
 
   try {
     let result;
-    for (let attempt = 0; attempt < 3; attempt++) {
+    for (let attempt = 0; attempt < 5; attempt++) {
       try {
         result = await summarizeArticle(item.title, item.content);
         break;
       } catch (e: any) {
-        if (e?.status === 429 && attempt < 2) {
-          console.log(`  ⏳ Rate limited, waiting 35s before retry...`);
-          await sleep(35000);
+        if (e?.status === 429 && attempt < 4) {
+          const waitSec = 30 + attempt * 15;
+          console.log(`  ⏳ Rate limited (attempt ${attempt + 1}/5), waiting ${waitSec}s...`);
+          await sleep(waitSec * 1000);
           continue;
         }
         throw e;
