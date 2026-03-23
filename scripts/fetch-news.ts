@@ -38,7 +38,7 @@ const COMPANY_SLUG_MAP: Record<string, string> = {
 };
 
 const MAX_ARTICLES_PER_RUN = 15;
-const DELAY_BETWEEN_CALLS_MS = 4000;
+const DELAY_BETWEEN_CALLS_MS = 8000;
 const MIN_CONTENT_LENGTH = 20;
 const AUTO_PUBLISH_THRESHOLD = 75;
 
@@ -68,7 +68,21 @@ async function processItem(item: FeedItem): Promise<'published' | 'draft' | 'ski
   if (await isDuplicate(item.link, item.title)) return 'skipped';
 
   try {
-    const result = await summarizeArticle(item.title, item.content);
+    let result;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        result = await summarizeArticle(item.title, item.content);
+        break;
+      } catch (e: any) {
+        if (e?.status === 429 && attempt < 2) {
+          console.log(`  ⏳ Rate limited, waiting 35s before retry...`);
+          await sleep(35000);
+          continue;
+        }
+        throw e;
+      }
+    }
+    if (!result) return 'error';
     if (!result.is_housing_related) return 'skipped';
 
     const isAutoPublish = result.confidence_score >= AUTO_PUBLISH_THRESHOLD;
