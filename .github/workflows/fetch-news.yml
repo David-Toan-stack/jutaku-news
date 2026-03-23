@@ -9,20 +9,24 @@ on:
 jobs:
   fetch-news:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - name: Trigger fetch-news API
-        run: |
-          response=$(curl -s -w "\n%{http_code}" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "${{ secrets.SITE_URL }}/api/cron/fetch-news")
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-          http_code=$(echo "$response" | tail -1)
-          body=$(echo "$response" | head -n -1)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
 
-          echo "Status: $http_code"
-          echo "Response: $body"
+      - name: Install dependencies
+        run: npm ci
 
-          if [ "$http_code" != "200" ]; then
-            echo "::error::API returned status $http_code"
-            exit 1
-          fi
+      - name: Run news pipeline
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: npx tsx scripts/fetch-news.ts
