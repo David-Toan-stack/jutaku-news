@@ -199,6 +199,16 @@ export async function runPipeline(options?: { batch?: number; batchSize?: number
     return { published: 0, drafted: 0, skipped: 0, errors: 0, sources_fetched: 0, total_sources: 0 };
   }
 
+  // Priority sources first: CBRE, 大和ハウス, 積水ハウス, 住友林業
+  const PRIORITY_KEYWORDS = ['CBRE', '大和ハウス', 'Daiwa', '積水ハウス', 'Sekisui House', '住友林業', 'Sumitomo Forestry'];
+  const isPriority = (s: { name: string; url: string }) =>
+    PRIORITY_KEYWORDS.some(kw => s.name.includes(kw) || s.url.toLowerCase().includes(kw.toLowerCase()));
+  allSources.sort((a: any, b: any) => {
+    const aPri = isPriority(a) ? 0 : 1;
+    const bPri = isPriority(b) ? 0 : 1;
+    return aPri - bPri;
+  });
+
   // Batch support: split sources into chunks for Vercel 60s limit
   const batchSize = options?.batchSize ?? 3;
   const batch = options?.batch;

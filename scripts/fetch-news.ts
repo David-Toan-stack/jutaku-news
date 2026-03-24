@@ -172,7 +172,18 @@ async function main() {
     return;
   }
 
+  // Priority sources first: CBRE, 大和ハウス, 積水ハウス, 住友林業
+  const PRIORITY_KEYWORDS = ['CBRE', '大和ハウス', 'Daiwa', '積水ハウス', 'Sekisui House', '住友林業', 'Sumitomo Forestry'];
+  const isPriority = (s: { name: string; url: string }) =>
+    PRIORITY_KEYWORDS.some(kw => s.name.includes(kw) || s.url.toLowerCase().includes(kw.toLowerCase()));
+  sources.sort((a, b) => {
+    const aPri = isPriority(a) ? 0 : 1;
+    const bPri = isPriority(b) ? 0 : 1;
+    return aPri - bPri;
+  });
+
   console.log(`Found ${sources.length} active sources`);
+  console.log(`Priority sources: ${sources.filter(isPriority).map(s => s.name).join(', ') || 'none'}`);
 
   let published = 0, drafted = 0, skipped = 0, errors = 0, totalProcessed = 0;
 
