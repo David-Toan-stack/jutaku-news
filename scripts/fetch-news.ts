@@ -41,6 +41,7 @@ const MAX_ARTICLES_PER_RUN = 15;
 const DELAY_BETWEEN_CALLS_MS = 8000;
 const MIN_CONTENT_LENGTH = 20;
 const AUTO_PUBLISH_THRESHOLD = 75;
+const MAX_AGE_DAYS = 7;
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -63,8 +64,17 @@ async function getCompanyIdBySlug(slug: string): Promise<string | null> {
   return data?.id || null;
 }
 
+function isWithinMaxAge(pubDate: string): boolean {
+  const articleDate = new Date(pubDate);
+  if (isNaN(articleDate.getTime())) return true; // If date is invalid, don't filter out
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - MAX_AGE_DAYS);
+  return articleDate >= cutoff;
+}
+
 async function processItem(item: FeedItem): Promise<'published' | 'draft' | 'skipped' | 'error'> {
   if (item.content.length < MIN_CONTENT_LENGTH && item.title.length < 10) return 'skipped';
+  if (!isWithinMaxAge(item.pubDate)) return 'skipped';
   if (await isDuplicate(item.link, item.title)) return 'skipped';
 
   try {

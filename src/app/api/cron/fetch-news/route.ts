@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const maxDuration = 60;
+
 export async function GET(request: NextRequest) {
   try {
     // Validate CRON_SECRET
@@ -13,9 +15,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Support batch processing: ?batch=0, ?batch=1, etc.
+    const batchParam = request.nextUrl.searchParams.get("batch");
+    const batch = batchParam !== null ? parseInt(batchParam, 10) : undefined;
+
     // Run the pipeline
     const { runPipeline } = await import("@/lib/pipeline/processor");
-    const result = await runPipeline();
+    const result = await runPipeline(batch !== undefined ? { batch, batchSize: 3 } : undefined);
 
     return NextResponse.json({
       success: true,
