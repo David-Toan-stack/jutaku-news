@@ -38,7 +38,7 @@ const COMPANY_SLUG_MAP: Record<string, string> = {
 };
 
 const MAX_ARTICLES_PER_RUN = 15;
-const DELAY_BETWEEN_CALLS_MS = 8000;
+const DELAY_BETWEEN_CALLS_MS = 3000;
 const MIN_CONTENT_LENGTH = 20;
 const AUTO_PUBLISH_THRESHOLD = 75;
 const MAX_AGE_DAYS = 7;
